@@ -1,0 +1,528 @@
+{
+  "name": "jira&slack",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "3179cb7d-0bc0-4baa-b1e3-18770131f38c",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        864,
+        320
+      ],
+      "id": "a105d2de-33ce-4d6e-82ef-4509d2188585",
+      "name": "Webhook",
+      "webhookId": "3179cb7d-0bc0-4baa-b1e3-18770131f38c"
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $input.first().json.body;\nconst actions = payload.actions || [];\n\nreturn actions.map((action) => ({\n  json: {\n    ...action,\n    transcript_id: payload.transcript_id,\n    final_action_items: payload.final_action_items\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1088,
+        320
+      ],
+      "id": "495c2dd3-ce24-4c5b-8bb9-e09b23290f71",
+      "name": "Split Action Items"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const idx = $itemIndex;\nconst original = $('Split Action Items').all()[idx].json;\nconst issueKey = $json.key || 'FAILED';\n\nreturn {\n  json: {\n    summary_line: `[${original.priority || 'Medium'}] ${issueKey} - ${original.title} (Assignee: ${original.assignee || 'Unassigned'})`\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1536,
+        320
+      ],
+      "id": "4ec97915-7f76-4130-8531-c5053131c2db",
+      "name": "Build Ticket Summary"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "summary_line"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        320
+      ],
+      "id": "2d250ecd-c1fb-4d81-b33e-959c0b26d9d7",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "project": {
+          "__rl": true,
+          "value": "10000",
+          "mode": "list",
+          "cachedResultName": "My Software Team"
+        },
+        "issueType": {
+          "__rl": true,
+          "value": "10003",
+          "mode": "list",
+          "cachedResultName": "Task"
+        },
+        "summary": "={{ $json.title }}",
+        "additionalFields": {
+          "description": "={{ $json.description }}\n\n\nSource Action ID: {{ $json.action_id }}\nPriority (from transcript): {{ $json.priority }}\nSuggested Assignee: {{ $json.assignee || 'Not specified' }}\nDue: {{ $json.due_context || 'Not specified' }}\nConfidence: {{ $json.confidence }}"
+        }
+      },
+      "type": "n8n-nodes-base.jira",
+      "typeVersion": 1,
+      "position": [
+        1312,
+        320
+      ],
+      "id": "505e3d40-696e-47a4-af96-66ab890cf6f6",
+      "name": "Create an issue1",
+      "credentials": {
+        "jiraSoftwareCloudApi": {
+          "id": "XP0Cf3ZVAF4zRXeA",
+          "name": "Jira SW Cloud account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "#jira_issue",
+          "mode": "name"
+        },
+        "text": "=white_check_mark: Meeting Analysis Complete\n\nTranscript ID: {{ $('Split Action Items').first().json.transcript_id }}\nTotal Action Items: {{ $('Split Action Items').first().json.final_action_items }}\n\nJira Tickets Created:\n{{ $json.summary_line.join('\\n') }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        1984,
+        320
+      ],
+      "id": "430a4858-3eeb-4b7b-8703-7cb30c8d3b4c",
+      "name": "Send a message1",
+      "webhookId": "d3c2a558-1b84-40b3-b55a-ee196d3f71e7",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "9I2KfvY1Pe3PxKn0",
+          "name": "Slack account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n.srv1304884.hstgr.cloud",
+            "user-agent": "python-httpx/0.28.1",
+            "content-length": "6813",
+            "accept": "*/*",
+            "accept-encoding": "gzip, deflate, zstd",
+            "content-type": "application/json",
+            "x-forwarded-for": "172.18.0.1",
+            "x-forwarded-host": "n8n.srv1304884.hstgr.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "958e33fc3e00",
+            "x-real-ip": "172.18.0.1"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "transcript_id": "TR-89E86E",
+            "total_chunks": 8,
+            "total_raw_items": 25,
+            "final_action_items": 24,
+            "actions": [
+              {
+                "action_id": "ACT-001",
+                "title": "Design Webflow Front End",
+                "description": "Speaker 1 received an offer to design a Webflow front end related to AI. They need to build a website using Webflow as per the assignment given.",
+                "assignee": "Speaker 1",
+                "priority": "High",
+                "due_context": "As soon as possible",
+                "confidence": 0.9,
+                "source_chunks": [
+                  1
+                ]
+              },
+              {
+                "action_id": "ACT-002",
+                "title": "Explore Cloud Plugin for Webflow",
+                "description": "Investigate the use of a cloud plugin that can connect Webflow to the cloud for automatic handling and building. Requires a cloud subscription pro account.",
+                "assignee": "",
+                "priority": "Medium",
+                "due_context": "",
+                "confidence": 0.85,
+                "source_chunks": [
+                  1
+                ]
+              },
+              {
+                "action_id": "ACT-003",
+                "title": "Connect Webflow plugin to the cloud",
+                "description": "Use the cloud plugin to automatically handle and build everything. Requires a cloud subscription pro account.",
+                "assignee": "",
+                "priority": "Medium",
+                "due_context": "",
+                "confidence": 0.85,
+                "source_chunks": [
+                  2
+                ]
+              },
+              {
+                "action_id": "ACT-004",
+                "title": "Obtain cloud subscription pro account",
+                "description": "The pro account is necessary to connect the Webflow plugin to the cloud. Currently not available.",
+                "assignee": "",
+                "priority": "High",
+                "due_context": "",
+                "confidence": 0.9,
+                "source_chunks": [
+                  2
+                ]
+              },
+              {
+                "action_id": "ACT-005",
+                "title": "Complete automation task",
+                "description": "Build automations as part of the workflow automation engineer role for Medico Medical Horizon.",
+                "assignee": "",
+                "priority": "High",
+                "due_context": "Deadline in three days",
+                "confidence": 0.95,
+                "source_chunks": [
+                  2
+                ]
+              },
+              {
+                "action_id": "ACT-006",
+                "title": "Complete given task for interview process",
+                "description": "First step in the interview process for a US-based company with a location in Bangalore.",
+                "assignee": "",
+                "priority": "Medium",
+                "due_context": "",
+                "confidence": 0.8,
+                "source_chunks": [
+                  2
+                ]
+              },
+              {
+                "action_id": "ACT-007",
+                "title": "Complete the given task",
+                "description": "First step in the interview process; task needs to be completed before proceeding to the next steps.",
+                "assignee": "",
+                "priority": "High",
+                "due_context": "As soon as possible",
+                "confidence": 0.9,
+                "source_chunks": [
+                  3
+                ]
+              },
+              {
+                "action_id": "ACT-008",
+                "title": "Schedule a twenty-minute call",
+                "description": "Second step in the interview process; to be scheduled after the task is completed.",
+                "assignee": "",
+                "priority": "Medium",
+                "due_context": "After task completion",
+                "confidence": 0.85,
+                "source_chunks": [
+                  3
+                ]
+              },
+              {
+                "action_id": "ACT-009",
+                "title": "Schedule a Zoom meeting",
+                "description": "Third step in the interview process; to be scheduled after the twenty-minute call.",
+                "assignee": "",
+                "priority": "Medium",
+                "due_context": "After the twenty-minute call",
+                "confidence": 0.85,
+                "source_chunks": [
+                  3
+                ]
+              },
+              {
+                "action_id": "ACT-010",
+                "title": "Go on-site to the company",
+                "description": "Fourth step in the interview process; involves discussions and collaboration with the team.",
+                "assignee": "",
+                "priority": "Medium",
+                "due_context": "After the Zoom meeting",
+                "confidence": 0.9,
+                "source_chunks": [
+                  3
+                ]
+              },
+              {
+                "action_id": "ACT-011",
+                "title": "Prepare and explain a project for ten minutes",
+                "description": "Part of the on-site visit; involves explaining a project to the team.",
+                "assignee": "",
+                "priority": "Medium",
+                "due_context": "During the on-site visit",
+                "confidence": 0.9,
+                "source_chunks": [
+                  3
+                ]
+              },
+              {
+                "action_id": "ACT-012",
+                "title": "Make a train reservation",
+                "description": "Reservation needs to be made immediately due to waiting lists and potential last-minute Tatkal options.",
+                "assignee": "Speaker 2's younger brother",
+                "priority": "High",
+                "due_context": "Immediately",
+                "confidence": 0.95,
+                "source_chunks": [
+                  4
+                ]
+              },
+              {
+                "action_id": "ACT-013",
+                "title": "Confirm ticket booking with agency",
+                "description": "Ensure tickets are booked through the agency to avoid missing out on availability.",
+                "assignee": "Speaker 1",
+                "priority": "Medium",
+                "due_context": "Before next travel or event",
+                "confidence": 0.85,
+                "source_chunks": [
+                  5
+                ]
+              },
+              {
+                "action_id": "ACT-014",
+                "title": "Check Vande Bharat train schedule",
+                "description": "Verify the availability and stops of Vande Bharat train from Hyderabad to nearby village.",
+                "assignee": "Speaker 2",
+                "priority": "Low",
+                "due_context": "Before planning next trip",
+                "confidence": 0.8,
+                "source_chunks": [
+                  5
+                ]
+              },
+              {
+                "action_id": "ACT-015",
+                "title": "Apply for job postings",
+                "description": "Speaker 1 inquires if Speaker 2 has applied for any job postings, suggesting the need to apply.",
+                "assignee": "Speaker 2",
+                "priority": "Medium",
+                "due_context": "As soon as possible",
+                "confidence": 0.85,
+                "source_chunks": [
+                  6
+                ]
+              },
+              {
+                "action_id": "ACT-016",
+                "title": "Try for PSUs",
+                "description": "Speaker 2 mentions thinking of trying for Public Sector Undertakings (PSUs).",
+                "assignee": "Speaker 2",
+                "priority": "Medium",
+                "due_context": "No specific deadline mentioned",
+                "confidence": 0.8,
+                "source_chunks": [
+                  6
+                ]
+              },
+              {
+                "action_id": "ACT-017",
+                "title": "Apply for internal service",
+                "description": "Speaker 1 suggests applying for internal service, indicating a potential action item.",
+                "assignee": "Speaker 2",
+                "priority": "Low",
+                "due_context": "No specific deadline mentioned",
+                "confidence": 0.8,
+                "source_chunks": [
+                  6,
+                  7
+                ]
+              },
+              {
+                "action_id": "ACT-018",
+                "title": "Enhance resume with job description",
+                "description": "Speaker 1 advises using job descriptions to identify gaps in the resume and improve it accordingly.",
+                "assignee": "Speaker 2",
+                "priority": "High",
+                "due_context": "",
+                "confidence": 0.9,
+                "source_chunks": [
+                  7
+                ]
+              },
+              {
+                "action_id": "ACT-019",
+                "title": "Learn data engineering",
+                "description": "Speaker 1 mentions learning data engineering to build applications and generate reports.",
+                "assignee": "Speaker 1",
+                "priority": "Medium",
+                "due_context": "",
+                "confidence": 0.8,
+                "source_chunks": [
+                  7
+                ]
+              },
+              {
+                "action_id": "ACT-020",
+                "title": "Build a tool for ATS report generation",
+                "description": "Speaker 1 discusses the idea of building a tool to generate ATS reports, which are currently paid for.",
+                "assignee": "Speaker 1",
+                "priority": "High",
+                "due_context": "",
+                "confidence": 0.85,
+                "source_chunks": [
+                  7
+                ]
+              },
+              {
+                "action_id": "ACT-021",
+                "title": "Analyze and reverse engineer AI reports",
+                "description": "Speaker 1 suggests giving reports to AI for reverse engineering to understand tasks involved.",
+                "assignee": "Speaker 1",
+                "priority": "Medium",
+                "due_context": "",
+                "confidence": 0.8,
+                "source_chunks": [
+                  7
+                ]
+              },
+              {
+                "action_id": "ACT-022",
+                "title": "Complete the eight-year check",
+                "description": "If you want to bill something, you should complete the eight-year check.",
+                "assignee": "",
+                "priority": "Medium",
+                "due_context": "",
+                "confidence": 0.85,
+                "source_chunks": [
+                  8
+                ]
+              },
+              {
+                "action_id": "ACT-023",
+                "title": "Analyze the report",
+                "description": "Give the report to AI, do reverse engineering on it, and see what each task is in it.",
+                "assignee": "",
+                "priority": "Medium",
+                "due_context": "",
+                "confidence": 0.8,
+                "source_chunks": [
+                  8
+                ]
+              },
+              {
+                "action_id": "ACT-024",
+                "title": "Add missing items to the bill",
+                "description": "I made the same bill, and I still need to add many things to it.",
+                "assignee": "",
+                "priority": "Medium",
+                "due_context": "",
+                "confidence": 0.75,
+                "source_chunks": [
+                  8
+                ]
+              }
+            ]
+          },
+          "webhookUrl": "https://n8n.srv1304884.hstgr.cloud/webhook-test/3179cb7d-0bc0-4baa-b1e3-18770131f38c",
+          "executionMode": "test"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Split Action Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Action Items": {
+      "main": [
+        [
+          {
+            "node": "Create an issue1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Ticket Summary": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an issue1": {
+      "main": [
+        [
+          {
+            "node": "Build Ticket Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "970c795e-8140-48e0-b8bd-2d8d6ccb11e8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "eb9e60fbbd7a1e3e8b665dc12c384c567c2910dd41038a7da529af342753a125"
+  },
+  "id": "mjxFPh3TbYwQm1phiYjge",
+  "tags": []
+}
